@@ -18,7 +18,7 @@ export class BandService {
         sleep(1000);
         console.log(456);
         // this.exampleGetReferenceData();
-        this.testBand();
+        // this.testBand();
     }
     async exampleGetReferenceData() {
         const rate = await this.client.getReferenceData(
@@ -47,7 +47,7 @@ export class BandService {
         console.log(script);
         let feeLimit = new Coin();
         feeLimit.setDenom('uband');
-        feeLimit.setAmount('9000000');
+        feeLimit.setAmount('100000');
 
         const prepareGas = 100000;
         const executeGas = 200000;

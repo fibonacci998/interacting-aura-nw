@@ -117,7 +117,7 @@ export class AppService {
         // this.testInstantiateContract();
         // this.queryContract();
 
-        // this.testExecuteContract();
+        this.testExecuteContract();
         // this.getTx();
         // this.testPollTx();
     }
