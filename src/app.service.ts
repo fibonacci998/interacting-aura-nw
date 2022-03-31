@@ -74,6 +74,7 @@ export interface ContractUploadInstructions {
 
 @Injectable()
 export class AppService {
+    //hard code user
     alice = {
         mnemonic:
             'fox undo purpose tip secret whisper almost bulk casual avocado wife swallow',
@@ -85,39 +86,45 @@ export class AppService {
         address1: 'aura1ylee4pzmvmknzg6n37nfeadrx5k9tx9qv8d57e',
     };
 
+    //point to testnet aurad
     // wasmd = {
     //     blockTime: 1_000, // ms
     //     chainId: 'aura-testnet',
     //     endpoint: 'https://tendermint-testnet.aura.network/',
     //     prefix: 'aura',
     // };
+
+    //point to localhost aurad
     wasmd = {
         blockTime: 1_000, // ms
         chainId: 'aura-testnet',
         endpoint: 'http://0.0.0.0:26657',
-        prefix: 'aura',
+        prefix: 'aura-testnet',
     };
+
     defaultSigningClientOptions = {
-        broadcastPollIntervalMs: 300,
-        broadcastTimeoutMs: 8_000,
+        broadcastPollIntervalMs: 200,
+        broadcastTimeoutMs: 10_000,
     };
     defaultGasPrice = GasPrice.fromString('0.025uaura');
     defaultSendFee = calculateFee(100_000, this.defaultGasPrice);
     defaultUploadFee = calculateFee(1_500_000, this.defaultGasPrice);
     flowerContract;
     constructor() {
-        // this.generateMnemonic();
-        // this.createAccount();
-        // this.getAccountDetail();
         const wasmBuffer = fs.readFileSync(
             '/home/tuan1998/test-mnemonic/src/flower_store.wasm',
         );
         this.flowerContract = new Uint8Array(wasmBuffer);
+        this.testFlowInteractingContract();
+
+        // this.generateMnemonic();
+        // this.createAccount();
+        // this.getAccountDetail();
         // this.testUploadContract();
         // this.testInstantiateContract();
         // this.queryContract();
 
-        this.testExecuteContract();
+        // this.testExecuteContract();
         // this.getTx();
         // this.testPollTx();
     }
@@ -337,7 +344,11 @@ export class AppService {
             wallet,
             options,
         );
-
+        console.log('flower contract: ', this.flowerContract);
+        console.log(
+            'balance: ',
+            await client.getBalance(this.alice.address0, 'uaura'),
+        );
         const funds = [coin(233444, 'uaura')];
         let codeId;
         let txId;
@@ -400,7 +411,7 @@ export class AppService {
                     price: 0,
                 },
                 'amazing random contract',
-                defaultInstantiateFee,
+                'auto',
                 {
                     funds: funds,
                 },
@@ -446,7 +457,140 @@ export class AppService {
                         price: 100,
                     },
                 },
-                defaultExecuteFee,
+                'auto',
+            );
+            console.log('tx instantiate complete here');
+            txId = resultExecute.transactionHash;
+        } catch (error) {
+            console.log('tx execute timeout');
+            resultExecute = error;
+            txId = resultExecute.txId;
+        }
+        console.log('txId: ', txId);
+        tx = await this.pollForTx(client, txId);
+        console.log('Transaction execute: ', tx);
+        console.log('-------------------------');
+        console.log('Query contract...');
+        let contractOnchain = await client.getContract(contractAddress);
+        console.log('Contract onchain: ', contractOnchain);
+        let resultQuery = await client.queryContractSmart(contractAddress, {
+            get_flower: { id: 'f1' },
+        });
+        console.log('Query result: ', resultQuery);
+    }
+
+    async testFlowInteractingContract() {
+        const defaultGasPrice = GasPrice.fromString('0.0002uaura');
+
+        const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+            this.alice.mnemonic,
+            { prefix: this.wasmd.prefix },
+        );
+        const options = {
+            ...this.defaultSigningClientOptions,
+            prefix: this.wasmd.prefix,
+            gasPrice: defaultGasPrice,
+        };
+
+        const client = await SigningAuraWasmClient.connectWithSigner(
+            this.wasmd.endpoint,
+            wallet,
+            options,
+        );
+
+        let codeId;
+        let txId;
+        let resultUpload;
+        console.log('Uploading contract...');
+        try {
+            // resultUpload = await client.upload(
+            //     this.alice.address0,
+            //     contract.data,
+            //     'auto',
+            // );
+            resultUpload = await client.upload(
+                this.alice.address0,
+                this.flowerContract,
+                'auto',
+            );
+            txId = resultUpload.transactionHash;
+            console.log('tx upload complete here');
+        } catch (error) {
+            console.log(error);
+            resultUpload = error;
+            txId = error.txId;
+            console.log('tx upload timeout');
+        }
+        await sleep(1000);
+        console.log('txId: ', txId);
+        let tx = await this.pollForTx(client, txId);
+        console.log('Transaction upload:', tx);
+        let parsedLogs = logs.parseRawLog(tx.rawLog);
+        let logDetail = logs.findAttribute(parsedLogs, 'store_code', 'code_id');
+        codeId = logDetail.value;
+        console.log('CodeId: ', Number(codeId));
+        let resultInstantiate;
+        txId = null;
+        tx = null;
+        parsedLogs = null;
+        logDetail = null;
+        console.log('-------------------------');
+        console.log('Instantiating contract...');
+
+        //amount token will be sent to smart contract
+        const funds = [coin(233444, 'uaura')];
+
+        try {
+            resultInstantiate = await client.instantiate(
+                this.alice.address0,
+                Number(codeId),
+                {
+                    name: 'init-flower',
+                    amount: 0,
+                    price: 0,
+                },
+                'amazing random contract',
+                'auto',
+                {
+                    funds: funds,
+                },
+            );
+            console.log('tx instantiate complete here');
+            txId = resultInstantiate.transactionHash;
+        } catch (error) {
+            resultInstantiate = error;
+            console.log('tx instantiate timeout');
+            txId = resultInstantiate.txId;
+        }
+        console.log('txId: ', txId);
+        tx = await this.pollForTx(client, txId);
+        console.log('Transaction instantiate: ', tx);
+        parsedLogs = logs.parseRawLog(tx.rawLog);
+        // logDetail = logs.findAttribute(parsedLogs, 'wasm', '_contract_address');
+        logDetail = logs.findAttribute(
+            parsedLogs,
+            'instantiate',
+            '_contract_address',
+        );
+        console.log('Contract address: ', logDetail.value);
+        let contractAddress = logDetail.value;
+        console.log('-------------------------');
+        console.log('Executing contract...');
+        let resultExecute;
+        txId = null;
+        try {
+            resultExecute = await client.execute(
+                this.alice.address0,
+                contractAddress,
+                {
+                    add_new: {
+                        id: 'f1',
+                        name: 'rose',
+                        amount: 150,
+                        price: 100,
+                    },
+                },
+                'auto',
             );
             console.log('tx instantiate complete here');
             txId = resultExecute.transactionHash;

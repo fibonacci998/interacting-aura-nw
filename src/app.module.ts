@@ -7,6 +7,6 @@ import { JsonSchemaService } from './json-schema.service';
 @Module({
     imports: [],
     controllers: [AppController],
-    providers: [AppService, BandService, JsonSchemaService],
+    providers: [AppService],
 })
 export class AppModule {}

@@ -5,74 +5,57 @@ import {
     compileFromFile,
     JSONSchema,
 } from 'json-schema-to-typescript';
-const fs = require('fs');
+import * as fs from 'fs';
+import * as esprima from 'esprima';
+import Ajv, { JSONSchemaType } from 'ajv';
+import { ExecuteMsg } from './output';
+// const fs = require('fs');
+// const esprima = require('esprima');
 @Injectable()
 export class JsonSchemaService {
+    output = 'src/output.ts';
+    msgJson;
     constructor() {
-        console.log('JsonSchemaService');
-        // this.generateFromSchema();
+        // console.log('JsonSchemaService');
+
+        const data = fs.readFileSync(
+            '/home/tuan1998/test-mnemonic/src/input.json',
+        );
+        this.msgJson = JSON.parse(data.toString());
+        // console.log(this.msgJson);
+
+        // this.generateTsFromSchema();
+        // this.generatejsFromSchema();
+        // this.readDataOutput();
     }
-    async generateFromSchema() {
-        let schema: JSONSchema = {
-            $schema: 'http://json-schema.org/draft-07/schema#',
-            title: 'ExecuteMsg',
-            oneOf: [
-                {
-                    type: 'object',
-                    required: ['add_new'],
-                    properties: {
-                        add_new: {
-                            type: 'object',
-                            required: ['amount', 'id', 'name', 'price'],
-                            properties: {
-                                amount: {
-                                    type: 'integer',
-                                    format: 'int32',
-                                },
-                                id: {
-                                    type: 'string',
-                                },
-                                name: {
-                                    type: 'string',
-                                },
-                                price: {
-                                    type: 'integer',
-                                    format: 'uint32',
-                                    minimum: 0.0,
-                                },
-                            },
-                        },
-                    },
-                    additionalProperties: false,
-                },
-                {
-                    type: 'object',
-                    required: ['sell'],
-                    properties: {
-                        sell: {
-                            type: 'object',
-                            required: ['amount', 'id'],
-                            properties: {
-                                amount: {
-                                    type: 'integer',
-                                    format: 'int32',
-                                },
-                                id: {
-                                    type: 'string',
-                                },
-                            },
-                        },
-                    },
-                    additionalProperties: false,
-                },
-            ],
-        };
-        console.log('generateFromSchema');
+    async generateTsFromSchema() {
+        let schema: JSONSchema = this.msgJson;
+        console.log('generateTsFromSchema');
         // compile from file
-        let result = await compile(schema, 'InstantiateMsg');
+        let result = await compile(schema, 'testSchema');
         console.log(result);
-        // .then((ts) =>
-        //     fs.writeFileSync('foo.d.ts', ts),
-        // );
+
+        fs.writeFileSync(this.output, result);
+    }
+    async generatejsFromSchema() {
+        console.log(this.msgJson);
+        let schema: JSONSchema = this.msgJson;
+        console.log('generateJsFromSchema');
+        const ajv = new Ajv();
+        let result = await ajv.compile(schema);
+        console.log(result);
+    }
+    async readDataOutput() {
+        var program = fs.readFileSync(this.output);
+        console.log(program.toString());
+        console.log(esprima.parseScript(program));
+        let a: ExecuteMsg = {
+            add_new: {
+                amount: 123,
+                id: '123',
+                name: '123',
+                price: 123,
+            },
+        };
     }
 }
