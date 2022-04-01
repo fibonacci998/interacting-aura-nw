@@ -34,12 +34,10 @@ import {
 } from '@cosmjs/stargate';
 import {
     MsgExecuteContractEncodeObject,
-    // MsgInstantiateContractEncodeObject,
-    // MsgStoreCodeEncodeObject,
+    MsgStoreCodeEncodeObject,
     SigningCosmWasmClient,
-    // MsgStoreCodeEncodeObject,
     SigningCosmWasmClientOptions,
-    // MsgInstantiateContractEncodeObject,
+    MsgInstantiateContractEncodeObject,
     CosmWasmClient,
 } from '@cosmjs/cosmwasm-stargate';
 import {
@@ -56,12 +54,12 @@ import { fromBase64 } from '@cosmjs/encoding';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import * as hackatom from './contract.json';
 
-import {
-    MsgStoreCodeEncodeObject,
-    SigningAuraWasmClient,
-    MsgInstantiateContractEncodeObject,
-    AuraWasmClient,
-} from '@auranw/aurajs';
+// import {
+//     MsgStoreCodeEncodeObject,
+//     SigningAuraWasmClient,
+//     MsgInstantiateContractEncodeObject,
+//     AuraWasmClient,
+// } from '@auranw/aurajs';
 import { sleep } from '@cosmjs/utils';
 import { Random } from '@cosmjs/crypto';
 
@@ -99,7 +97,7 @@ export class AppService {
         blockTime: 1_000, // ms
         chainId: 'aura-testnet',
         endpoint: 'http://0.0.0.0:26657',
-        prefix: 'aura-testnet',
+        prefix: 'aura',
     };
 
     defaultSigningClientOptions = {
@@ -111,9 +109,7 @@ export class AppService {
     defaultUploadFee = calculateFee(1_500_000, this.defaultGasPrice);
     flowerContract;
     constructor() {
-        const wasmBuffer = fs.readFileSync(
-            '/home/tuan1998/test-mnemonic/src/flower_store.wasm',
-        );
+        const wasmBuffer = fs.readFileSync('./src/flower_store.wasm');
         this.flowerContract = new Uint8Array(wasmBuffer);
         this.testFlowInteractingContract();
 
@@ -176,8 +172,8 @@ export class AppService {
     ) {
         const memo = 'My first contract on chain';
         const theMsg: MsgStoreCodeEncodeObject = {
-            // typeUrl: '/cosmwasm.wasm.v1.MsgStoreCode',
-            typeUrl: '/auranw.aura.wasm.MsgStoreCode',
+            typeUrl: '/cosmwasm.wasm.v1.MsgStoreCode',
+            // typeUrl: '/auranw.aura.wasm.MsgStoreCode',
             value: MsgStoreCode.fromPartial({
                 sender: this.alice.address0,
                 wasmByteCode: contract.data,
@@ -229,8 +225,8 @@ export class AppService {
         ]);
         const memo = 'Create an escrow instance';
         const theMsg: MsgInstantiateContractEncodeObject = {
-            // typeUrl: '/cosmwasm.wasm.v1.MsgInstantiateContract',
-            typeUrl: '/auranw.aura.wasm.MsgInstantiateContract',
+            typeUrl: '/cosmwasm.wasm.v1.MsgInstantiateContract',
+            // typeUrl: '/auranw.aura.wasm.MsgInstantiateContract',
             value: MsgInstantiateContract.fromPartial({
                 sender: this.alice.address0,
                 codeId: codeId,
@@ -339,7 +335,7 @@ export class AppService {
         };
         const beneficiaryAddress = this.alice.address1;
 
-        const client = await SigningAuraWasmClient.connectWithSigner(
+        const client = await SigningCosmWasmClient.connectWithSigner(
             this.wasmd.endpoint,
             wallet,
             options,
@@ -492,7 +488,7 @@ export class AppService {
             gasPrice: defaultGasPrice,
         };
 
-        const client = await SigningAuraWasmClient.connectWithSigner(
+        const client = await SigningCosmWasmClient.connectWithSigner(
             this.wasmd.endpoint,
             wallet,
             options,
