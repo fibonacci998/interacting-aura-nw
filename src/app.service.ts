@@ -34,8 +34,8 @@ import {
 } from '@cosmjs/stargate';
 import {
     MsgExecuteContractEncodeObject,
-    // MsgInstantiateContractEncodeObject,
-    // MsgStoreCodeEncodeObject,
+    MsgInstantiateContractEncodeObject,
+    MsgStoreCodeEncodeObject,
     SigningCosmWasmClient,
     // MsgStoreCodeEncodeObject,
     SigningCosmWasmClientOptions,
@@ -56,12 +56,12 @@ import { fromBase64 } from '@cosmjs/encoding';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import * as hackatom from './contract.json';
 
-import {
-    MsgStoreCodeEncodeObject,
-    SigningAuraWasmClient,
-    MsgInstantiateContractEncodeObject,
-    AuraWasmClient,
-} from '@auranw/aurajs';
+// import {
+//     MsgStoreCodeEncodeObject,
+//     SigningAuraWasmClient,
+//     MsgInstantiateContractEncodeObject,
+//     AuraWasmClient,
+// } from '@auranw/aurajs';
 import { sleep } from '@cosmjs/utils';
 import { Random } from '@cosmjs/crypto';
 
@@ -99,7 +99,7 @@ export class AppService {
         blockTime: 1_000, // ms
         chainId: 'aura-testnet',
         endpoint: 'http://0.0.0.0:26657',
-        prefix: 'aura-testnet',
+        prefix: 'aura',
     };
 
     defaultSigningClientOptions = {
@@ -176,8 +176,8 @@ export class AppService {
     ) {
         const memo = 'My first contract on chain';
         const theMsg: MsgStoreCodeEncodeObject = {
-            // typeUrl: '/cosmwasm.wasm.v1.MsgStoreCode',
-            typeUrl: '/auranw.aura.wasm.MsgStoreCode',
+            typeUrl: '/cosmwasm.wasm.v1.MsgStoreCode',
+            // typeUrl: '/auranw.aura.wasm.MsgStoreCode',
             value: MsgStoreCode.fromPartial({
                 sender: this.alice.address0,
                 wasmByteCode: contract.data,
@@ -229,8 +229,8 @@ export class AppService {
         ]);
         const memo = 'Create an escrow instance';
         const theMsg: MsgInstantiateContractEncodeObject = {
-            // typeUrl: '/cosmwasm.wasm.v1.MsgInstantiateContract',
-            typeUrl: '/auranw.aura.wasm.MsgInstantiateContract',
+            typeUrl: '/cosmwasm.wasm.v1.MsgInstantiateContract',
+            // typeUrl: '/auranw.aura.wasm.MsgInstantiateContract',
             value: MsgInstantiateContract.fromPartial({
                 sender: this.alice.address0,
                 codeId: codeId,
@@ -339,7 +339,7 @@ export class AppService {
         };
         const beneficiaryAddress = this.alice.address1;
 
-        const client = await SigningAuraWasmClient.connectWithSigner(
+        const client = await SigningCosmWasmClient.connectWithSigner(
             this.wasmd.endpoint,
             wallet,
             options,
@@ -436,7 +436,7 @@ export class AppService {
         console.log('Contract address: ', logDetail.value);
         let contractAddress = logDetail.value;
         console.log('-------------------------');
-        console.log('Executing contract...');
+        console.log('Executing contract add new...');
         let resultExecute;
         txId = null;
         try {
@@ -469,6 +469,38 @@ export class AppService {
         console.log('txId: ', txId);
         tx = await this.pollForTx(client, txId);
         console.log('Transaction execute: ', tx);
+        console.log('Executing contract sell...');
+        resultExecute;
+        txId = null;
+        try {
+            // resultExecute = await client.execute(
+            //     this.alice.address0,
+            //     contractAddress,
+            //     { release: {} },
+            //     defaultExecuteFee,
+            // );
+            resultExecute = await client.execute(
+                this.alice.address0,
+                contractAddress,
+                {
+                    sell: {
+                        id: 'f1',
+                        amount: 1,
+                    },
+                },
+                'auto',
+            );
+            console.log('tx instantiate complete here');
+            txId = resultExecute.transactionHash;
+        } catch (error) {
+            console.log('tx execute timeout');
+            resultExecute = error;
+            txId = resultExecute.txId;
+        }
+        console.log('txId: ', txId);
+        tx = await this.pollForTx(client, txId);
+        console.log('Transaction execute: ', tx);
+
         console.log('-------------------------');
         console.log('Query contract...');
         let contractOnchain = await client.getContract(contractAddress);
@@ -492,7 +524,7 @@ export class AppService {
             gasPrice: defaultGasPrice,
         };
 
-        const client = await SigningAuraWasmClient.connectWithSigner(
+        const client = await SigningCosmWasmClient.connectWithSigner(
             this.wasmd.endpoint,
             wallet,
             options,
@@ -575,7 +607,7 @@ export class AppService {
         console.log('Contract address: ', logDetail.value);
         let contractAddress = logDetail.value;
         console.log('-------------------------');
-        console.log('Executing contract...');
+        console.log('Executing contract add new...');
         let resultExecute;
         txId = null;
         try {
@@ -588,6 +620,31 @@ export class AppService {
                         name: 'rose',
                         amount: 150,
                         price: 100,
+                    },
+                },
+                'auto',
+            );
+            console.log('tx instantiate complete here');
+            txId = resultExecute.transactionHash;
+        } catch (error) {
+            console.log('tx execute timeout');
+            resultExecute = error;
+            txId = resultExecute.txId;
+        }
+        console.log('txId: ', txId);
+        tx = await this.pollForTx(client, txId);
+        console.log('Transaction execute: ', tx);
+        console.log('Executing contract sell...');
+        resultExecute = null;
+        txId = null;
+        try {
+            resultExecute = await client.execute(
+                this.alice.address0,
+                contractAddress,
+                {
+                    sell: {
+                        id: 'f1',
+                        amount: 1,
                     },
                 },
                 'auto',
