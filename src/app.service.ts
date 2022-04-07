@@ -34,12 +34,10 @@ import {
 } from '@cosmjs/stargate';
 import {
     MsgExecuteContractEncodeObject,
-    MsgInstantiateContractEncodeObject,
     MsgStoreCodeEncodeObject,
     SigningCosmWasmClient,
-    // MsgStoreCodeEncodeObject,
     SigningCosmWasmClientOptions,
-    // MsgInstantiateContractEncodeObject,
+    MsgInstantiateContractEncodeObject,
     CosmWasmClient,
 } from '@cosmjs/cosmwasm-stargate';
 import {
@@ -111,9 +109,7 @@ export class AppService {
     defaultUploadFee = calculateFee(1_500_000, this.defaultGasPrice);
     flowerContract;
     constructor() {
-        const wasmBuffer = fs.readFileSync(
-            '/home/tuan1998/test-mnemonic/src/flower_store.wasm',
-        );
+        const wasmBuffer = fs.readFileSync('./src/flower_store.wasm');
         this.flowerContract = new Uint8Array(wasmBuffer);
         this.testFlowInteractingContract();
 
